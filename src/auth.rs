@@ -3,11 +3,13 @@
 use crate::models::AppId;
 use crate::Result;
 use either::Either;
-use jsonwebtoken::{Algorithm, EncodingKey, Header};
+use jwt_simple::{
+    prelude::{Clock, Duration, JWTClaims, NoCustomClaims, RS256KeyPair, RSAKeyPairLike},
+    Error,
+};
 use secrecy::{ExposeSecret, SecretString};
 use serde::{Deserialize, Serialize};
 use std::fmt;
-use std::time::SystemTime;
 
 use snafu::*;
 
@@ -17,7 +19,7 @@ pub struct AppAuth {
     /// Github's app ID
     pub app_id: AppId,
     /// The app's RSA private key
-    pub key: EncodingKey,
+    pub key: RS256KeyPair,
 }
 
 impl fmt::Debug for AppAuth {
@@ -56,38 +58,34 @@ impl Default for Auth {
 /// Create a JSON Web Token that can be used to authenticate an a GitHub application.
 ///
 /// See: https://docs.github.com/en/developers/apps/getting-started-with-apps/setting-up-your-development-environment-to-create-a-github-app#authenticating-as-a-github-app
-pub fn create_jwt(
-    github_app_id: AppId,
-    key: &EncodingKey,
-) -> Result<String, jsonwebtoken::errors::Error> {
-    #[derive(Serialize)]
-    struct Claims {
-        iss: AppId,
-        iat: usize,
-        exp: usize,
-    }
-
-    let now = SystemTime::UNIX_EPOCH.elapsed().unwrap().as_secs() as usize;
+pub fn create_jwt(github_app_id: AppId, key: RS256KeyPair) -> Result<String, Error> {
+    let now = Clock::now_since_epoch();
 
     // Github only allows JWTs that expire in the next 10 minutes.
     // The token is issued 60 seconds in the past and expires in 9 minutes,
     // to allow some clock drift.
-    let claims = Claims {
-        iss: github_app_id,
-        iat: now - 60,
-        exp: now + (9 * 60),
+    let claims = JWTClaims {
+        issued_at: Some(now - Duration::from_mins(1)),
+        expires_at: Some(now + Duration::from_mins(9)),
+        invalid_before: Some(now),
+        issuer: Some(github_app_id.into_inner().to_string()),
+        subject: None,
+        audiences: None,
+        jwt_id: None,
+        nonce: None,
+        custom: NoCustomClaims {},
     };
 
-    let header = Header::new(Algorithm::RS256);
+    let token = key.sign(claims)?;
 
-    jsonwebtoken::encode(&header, &claims, key)
+    Ok(token)
 }
 
 impl AppAuth {
     /// Currently we don't cache these, but we could if we want to avoid
     /// an RSA signature operation per App-authorized API call.
     pub fn generate_bearer_token(&self) -> Result<String> {
-        create_jwt(self.app_id, &self.key).context(crate::error::JWTSnafu)
+        create_jwt(self.app_id, self.key.clone()).context(crate::error::JWTSnafu)
     }
 }
 

@@ -160,6 +160,7 @@ pub mod params;
 use std::fmt;
 use std::sync::{Arc, RwLock};
 
+use jwt_simple::prelude::RS256KeyPair;
 use once_cell::sync::Lazy;
 use reqwest::{header::HeaderName, StatusCode, Url};
 use secrecy::{ExposeSecret, SecretString};
@@ -171,8 +172,8 @@ use models::{AppId, InstallationId, InstallationToken};
 
 pub use self::{
     api::{
-        actions, activity, apps, current, events, gists, gitignore, issues, commits,
-        licenses, markdown, orgs, pulls, repos, search, teams, workflows, ratelimit,
+        actions, activity, apps, commits, current, events, gists, gitignore, issues, licenses,
+        markdown, orgs, pulls, ratelimit, repos, search, teams, workflows,
     },
     error::{Error, GitHubError},
     from_response::FromResponse,
@@ -294,7 +295,7 @@ impl OctocrabBuilder {
 
     /// Authenticate as a Github App.
     /// `key`: RSA private key in DER or PEM formats.
-    pub fn app(mut self, app_id: AppId, key: jsonwebtoken::EncodingKey) -> Self {
+    pub fn app(mut self, app_id: AppId, key: RS256KeyPair) -> Self {
         self.auth = Auth::App(AppAuth { app_id, key });
         self
     }
@@ -331,7 +332,7 @@ impl OctocrabBuilder {
 
         let auth_state = match self.auth {
             Auth::None => AuthState::None,
-            Auth::Basic{ username, password } => AuthState::BasicAuth { username, password },
+            Auth::Basic { username, password } => AuthState::BasicAuth { username, password },
             Auth::PersonalToken(token) => {
                 hmap.append(
                     reqwest::header::AUTHORIZATION,
@@ -717,16 +718,23 @@ impl Octocrab {
     ) -> Result<reqwest::Response> {
         self._get_with_headers(url, parameters, None).await
     }
-    
+
     /// Send a `GET` request to `route` with optional query parameters and headers, returning
     /// the body of the response.
-    pub async fn get_with_headers<R, A, P>(&self, route: A, parameters: Option<&P>, headers: Option<reqwest::header::HeaderMap>) -> Result<R>
+    pub async fn get_with_headers<R, A, P>(
+        &self,
+        route: A,
+        parameters: Option<&P>,
+        headers: Option<reqwest::header::HeaderMap>,
+    ) -> Result<R>
     where
         A: AsRef<str>,
         P: Serialize + ?Sized,
         R: FromResponse,
     {
-        let response = self._get_with_headers(self.absolute_url(route)?, parameters, headers).await?;
+        let response = self
+            ._get_with_headers(self.absolute_url(route)?, parameters, headers)
+            .await?;
         R::from_response(crate::map_github_error(response).await?).await
     }
 
@@ -735,21 +743,20 @@ impl Octocrab {
         &self,
         url: impl reqwest::IntoUrl,
         parameters: Option<&P>,
-        headers: Option<reqwest::header::HeaderMap>
+        headers: Option<reqwest::header::HeaderMap>,
     ) -> Result<reqwest::Response> {
         let mut request = self.client.get(url);
 
         if let Some(parameters) = parameters {
             request = request.query(parameters);
         }
-        
+
         if let Some(headers) = headers {
             request = request.headers(headers)
         }
 
         self.execute(request).await
     }
-
 
     /// Send a `PATCH` request to `route` with optional query parameters,
     /// returning the body of the response.
@@ -905,7 +912,10 @@ impl Octocrab {
                     retry_request = Some(request.try_clone().unwrap());
                     request = request.bearer_auth(app.generate_bearer_token()?);
                 }
-                AuthState::BasicAuth { ref username, ref password } => {
+                AuthState::BasicAuth {
+                    ref username,
+                    ref password,
+                } => {
                     retry_request = Some(request.try_clone().unwrap());
                     request = request.basic_auth(username, Some(password));
                 }

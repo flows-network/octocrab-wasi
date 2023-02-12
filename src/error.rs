@@ -30,7 +30,7 @@ pub enum Error {
     },
     #[snafu(display("JWT Error in {}\nFound at {}", source, backtrace))]
     JWT {
-        source: jsonwebtoken::errors::Error,
+        source: jwt_simple::Error,
         backtrace: Backtrace,
     },
     Other {
