@@ -1,20 +1,21 @@
 [package]
-name = "octocrab"
-version = "0.18.1"
-authors = ["XAMPPRocky <xampprocky@gmail.com>"]
+# name = "octocrab"
+name = "octocrab_wasi"
+version = "0.18.2"
+authors = ["XAMPPRocky <xampprocky@gmail.com>", "jetjinser <cmdr.jv@gmail.com>"]
 edition = "2018"
 readme = "README.md"
-homepage = "https://github.com/XAMPPRocky/octocrab"
-repository = "https://github.com/XAMPPRocky/octocrab.git"
-description = "A modern, extensible GitHub API client."
+homepage = "https://github.com/jetjinser/octocrab"
+repository = "https://github.com/jetjinser/octocrab.git"
+description = "A modern, extensible GitHub API client with wasi support, forked from XAMPPRocky/octocrab."
 license = "Apache-2.0/MIT"
-documentation = "https://docs.rs/octocrab"
+documentation = "https://docs.rs/octocrab_wasi"
 categories = ["web-programming::http-client"]
 keywords = ["github", "github-api"]
 
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
 [package.metadata.docs.rs]
-targets = ["x86_64-unknown-linux-gnu"]
+targets = ["x86_64-unknown-linux-gnu", "wasm32-wasi"]
 
 [dependencies]
 reqwest = { version = "0.11.10", optional = true, default-features = false, features = ["json"] }
