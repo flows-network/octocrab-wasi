@@ -1,7 +1,7 @@
 [package]
 # name = "octocrab"
 name = "octocrab_wasi"
-version = "0.18.2"
+version = "0.18.3"
 authors = ["XAMPPRocky <xampprocky@gmail.com>", "jetjinser <cmdr.jv@gmail.com>"]
 edition = "2018"
 readme = "README.md"
@@ -52,6 +52,7 @@ default = ["native-tls", "reqwest"]
 rustls = ["rustls-tls"]  # Leagcy support (<=0.17.0)
 
 wasi = ["reqwest_wasi"]
+no-pool = ["reqwest_wasi/no-pool"]
 
 # Enables native-tls specific functionality not available by default.
 native-tls = ["reqwest/native-tls"]
