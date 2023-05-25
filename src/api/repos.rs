@@ -1,6 +1,7 @@
 //! The repositories API.
 
 use reqwest::header::ACCEPT;
+use snafu::ResultExt;
 
 mod branches;
 mod commits;
@@ -15,15 +16,15 @@ mod status;
 mod tags;
 
 use crate::{models, params, Octocrab, Result};
+pub use branches::ListBranchesBuilder;
 pub use commits::ListCommitsBuilder;
-pub use file::{GetContentBuilder, UpdateFileBuilder, DeleteFileBuilder};
+pub use file::{DeleteFileBuilder, GetContentBuilder, UpdateFileBuilder};
 pub use generate::GenerateRepositoryBuilder;
 pub use pulls::ListPullsBuilder;
 pub use releases::ReleasesHandler;
 pub use stargazers::ListStarGazersBuilder;
 pub use status::{CreateStatusBuilder, ListStatusesBuilder};
 pub use tags::ListTagsBuilder;
-pub use branches::ListBranchesBuilder;
 
 /// Handler for GitHub's repository API.
 ///
@@ -187,6 +188,29 @@ impl<'octo> RepoHandler<'octo> {
                 })),
             )
             .await
+    }
+
+    pub async fn compare_patch(
+        &self,
+        before: impl Into<String>,
+        after: impl Into<String>,
+    ) -> Result<String> {
+        let route = format!(
+            "repos/{owner}/{repo}/compare/{before}...{after}",
+            owner = self.owner,
+            repo = self.repo,
+            before = before.into(),
+            after = after.into(),
+        );
+        let request = self
+            .crab
+            .client
+            .get(self.crab.absolute_url(route)?)
+            .header(reqwest::header::ACCEPT, crate::format_media_type("patch"));
+
+        let response = crate::map_github_error(self.crab.execute(request).await?).await?;
+
+        response.text().await.context(crate::error::HttpSnafu)
     }
 
     /// Get repository content.
@@ -523,10 +547,7 @@ impl<'octo> RepoHandler<'octo> {
     }
 
     /// Check if a user is a repository collaborator
-    pub async fn is_collaborator(
-        &self,
-        username: impl AsRef<str>,
-    ) -> Result<bool> {
+    pub async fn is_collaborator(&self, username: impl AsRef<str>) -> Result<bool> {
         let url = self.crab.absolute_url(format!(
             "/repos/{owner}/{repo}/collaborators/{username}",
             owner = self.owner,
