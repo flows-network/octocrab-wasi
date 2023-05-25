@@ -13,6 +13,10 @@ pub struct PullRequestEventPayload {
     pub pull_request: PullRequest,
     /// The changes to body or title if this event is of type [`PullRequestEventAction::Edited`].
     pub changes: Option<PullRequestChanges>,
+
+    // workaround
+    pub before: Option<String>,
+    pub after: Option<String>,
 }
 
 /// The action on a pull request this event corresponds to.
@@ -62,9 +66,9 @@ pub struct PullRequestEventChangesFrom {
 
 #[cfg(test)]
 mod test {
-    use serde_json::json;
     use super::{PullRequestChanges, PullRequestEventAction, PullRequestEventChangesFrom};
     use crate::models::events::{payload::EventPayload, Event};
+    use serde_json::json;
 
     #[test]
     fn should_deserialize_action_from_snake_case() {
