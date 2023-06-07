@@ -576,6 +576,18 @@ impl<'octo> RepoHandler<'octo> {
         self.crab.graphql(&query).await
     }
 
+    /// Get a discussion.
+    /// https://docs.github.com/en/graphql/guides/using-the-graphql-api-for-discussions#repositorydiscussion
+    /// https://docs.github.com/en/graphql/reference/objects#discussion
+    /// ```no_run
+    /// # async fn run() -> octocrab::Result<()> {
+    /// octocrab::instance()
+    ///     .repos("owner", "repo")
+    ///     .discussion(123, vec!["id", "body"]).await
+    ///     //          ^^^
+    ///     //          discussion number
+    /// # }
+    /// ```
     pub async fn discussion(&self, number: usize, fields: Vec<&str>) -> Result<Value> {
         let discussion = format!("discussion(number: {number})");
 
@@ -586,6 +598,7 @@ impl<'octo> RepoHandler<'octo> {
         self.repository(&dquery).await
     }
 
+    /// https://docs.github.com/en/graphql/guides/using-the-graphql-api-for-discussions#repositorydiscussions
     pub async fn discussions(
         &self,
         after: &str,
@@ -605,6 +618,7 @@ impl<'octo> RepoHandler<'octo> {
         self.repository(&dquery).await
     }
 
+    /// https://docs.github.com/en/graphql/guides/using-the-graphql-api-for-discussions#repositorydiscussioncategories
     pub async fn discussion_categories(
         &self,
         after: &str,
@@ -624,6 +638,7 @@ impl<'octo> RepoHandler<'octo> {
         self.repository(&dquery).await
     }
 
+    /// https://docs.github.com/en/graphql/guides/using-the-graphql-api-for-discussions#repositorypinneddiscussions
     pub async fn pinned_discussions(
         &self,
         after: &str,
@@ -645,6 +660,15 @@ impl<'octo> RepoHandler<'octo> {
 
     // mutations below
 
+    /// Add a discussion comment.
+    /// https://docs.github.com/en/graphql/reference/mutations#adddiscussioncomment
+    /// ```no_run
+    /// # async fn run() -> octocrab::Result<()> {
+    /// octocrab::instance()
+    ///     .repos("owner", "repo")
+    ///     .add_discussion_comment("body", "discussion_id", vec!["id", "body"]).await
+    /// # }
+    /// ```
     pub async fn add_discussion_comment(
         &self,
         body: &str,
@@ -662,6 +686,15 @@ impl<'octo> RepoHandler<'octo> {
         self.mutation(&dquery).await
     }
 
+    /// Close a discussion.
+    /// https://docs.github.com/en/graphql/reference/mutations#closediscussion
+    /// ```no_run
+    /// # async fn run() -> octocrab::Result<()> {
+    /// octocrab::instance()
+    ///     .repos("owner", "repo")
+    ///     .create_discussion("body", "category_id", "repository_id", "title", vec!["id", "body"]).await
+    /// # }
+    /// ```
     pub async fn create_discussion(
         &self,
         body: &str,
@@ -681,6 +714,15 @@ impl<'octo> RepoHandler<'octo> {
         self.mutation(&dquery).await
     }
 
+    /// Close this discussion.
+    /// https://docs.github.com/en/graphql/reference/mutations#closediscussion
+    /// ```no_run
+    /// # async fn run() -> octocrab::Result<()> {
+    /// octocrab::instance()
+    ///     .repos("owner", "repo")
+    ///     .close_discussion("discussion_id", vec!["id", "body"]).await
+    /// # }
+    /// ```
     pub async fn close_discussion(&self, discussion_id: &str, fields: Vec<&str>) -> Result<Value> {
         let dis = format!("closeDiscussion(discussion_id: {discussion_id:?})");
 
@@ -691,6 +733,15 @@ impl<'octo> RepoHandler<'octo> {
         self.mutation(&dquery).await
     }
 
+    /// Delete this discussion.
+    /// https://docs.github.com/en/graphql/reference/mutations#deletediscussion
+    /// ```no_run
+    /// # async fn run() -> octocrab::Result<()> {
+    /// octocrab::instance()
+    ///     .repos("owner", "repo")
+    ///     .delete_discussion_comment("id", vec!["id", "body"]).await
+    /// # }
+    /// ```
     pub async fn delete_discussion(&self, id: &str, fields: Vec<&str>) -> Result<Value> {
         let dis = format!("deleteDiscussion(id: {id:?})");
 
@@ -701,6 +752,15 @@ impl<'octo> RepoHandler<'octo> {
         self.mutation(&dquery).await
     }
 
+    /// Delete this discussion comment.
+    /// https://docs.github.com/en/graphql/reference/mutations#deletediscussioncomment
+    /// ```no_run
+    /// # async fn run() -> octocrab::Result<()> {
+    /// octocrab::instance()
+    ///     .repos("owner", "repo")
+    ///     .delete_discussion_comment("id", vec!["id", "body"]).await
+    /// # }
+    /// ```
     pub async fn delete_discussion_comment(&self, id: &str, fields: Vec<&str>) -> Result<Value> {
         let dis = format!("deleteDiscussionComment(id: {id:?})");
 
@@ -711,6 +771,15 @@ impl<'octo> RepoHandler<'octo> {
         self.mutation(&dquery).await
     }
 
+    /// Update this discussion.
+    /// https://docs.github.com/en/graphql/reference/mutations#updatediscussioncomment
+    /// ```no_run
+    /// # async fn run() -> octocrab::Result<()> {
+    /// octocrab::instance()
+    ///     .repos("owner", "repo")
+    ///     .update_discussion("id", "body", "title", "fields", vec!["id", "body"]).await
+    /// # }
+    /// ```
     pub async fn update_discussion(
         &self,
         id: &str,
@@ -727,6 +796,15 @@ impl<'octo> RepoHandler<'octo> {
         self.mutation(&dquery).await
     }
 
+    /// Update this discussion comment.
+    /// https://docs.github.com/en/graphql/reference/mutations#updatediscussioncomment
+    /// ```no_run
+    /// # async fn run() -> octocrab::Result<()> {
+    /// octocrab::instance()
+    ///     .repos("owner", "repo")
+    ///     .update_discussion_comment("id", "body", vec!["id", "body"]).await
+    /// # }
+    /// ```
     pub async fn update_discussion_comment(
         &self,
         id: &str,
