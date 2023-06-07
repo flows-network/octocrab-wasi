@@ -1,6 +1,7 @@
 //! The repositories API.
 
 use reqwest::header::ACCEPT;
+use serde_json::Value;
 use snafu::ResultExt;
 
 mod branches;
@@ -556,5 +557,188 @@ impl<'octo> RepoHandler<'octo> {
         ))?;
         let response = self.crab._get(url, None::<&()>).await?;
         Ok(response.status().is_success())
+    }
+}
+
+impl<'octo> RepoHandler<'octo> {
+    async fn repository(&self, dquery: &str) -> Result<Value> {
+        let repository = format!("repository(owner: {:?}, name: {:?})", self.owner, self.repo);
+        let query = format!("query {{ {repository} {{ {dquery} }} }}");
+
+        self.crab.graphql(&query).await
+    }
+
+    async fn mutation(&self, dquery: &str) -> Result<Value> {
+        let query = format!("mutation {{ {dquery} }}");
+
+        println!("{}", query);
+
+        self.crab.graphql(&query).await
+    }
+
+    pub async fn discussion(&self, number: usize, fields: Vec<&str>) -> Result<Value> {
+        let discussion = format!("discussion(number: {number})");
+
+        let fields = fields.join(" ");
+
+        let dquery = format!("{discussion} {{ {fields} }}");
+
+        self.repository(&dquery).await
+    }
+
+    pub async fn discussions(
+        &self,
+        after: &str,
+        before: &str,
+        first: usize,
+        last: usize,
+        fields: Vec<&str>,
+    ) -> Result<Value> {
+        let dis = format!(
+            "discussions(after: {after:?}, before: {before:?}, first: {first}, last: {last})"
+        );
+
+        let fields = fields.join(" ");
+
+        let dquery = format!("{dis} {{ {fields} }}");
+
+        self.repository(&dquery).await
+    }
+
+    pub async fn discussion_categories(
+        &self,
+        after: &str,
+        before: &str,
+        first: usize,
+        last: usize,
+        fields: Vec<&str>,
+    ) -> Result<Value> {
+        let dis = format!(
+            "discussionCategories(after: {after:?}, before: {before:?}, first: {first}, last: {last})"
+        );
+
+        let fields = fields.join(" ");
+
+        let dquery = format!("{dis} {{ {fields} }}");
+
+        self.repository(&dquery).await
+    }
+
+    pub async fn pinned_discussions(
+        &self,
+        after: &str,
+        before: &str,
+        first: usize,
+        last: usize,
+        fields: Vec<&str>,
+    ) -> Result<Value> {
+        let dis = format!(
+            "pinnedDiscussions(after: {after:?}, before: {before:?}, first: {first}, last: {last})"
+        );
+
+        let fields = fields.join(" ");
+
+        let dquery = format!("{dis} {{ {fields} }}");
+
+        self.repository(&dquery).await
+    }
+
+    // mutations below
+
+    pub async fn add_discussion_comment(
+        &self,
+        body: &str,
+        discussion_id: &str,
+        fields: Vec<&str>,
+    ) -> Result<Value> {
+        let dis = format!(
+            "addDiscussionComment(input: {{body: {body:?}, discussionId: {discussion_id:?}}})"
+        );
+
+        let fields = fields.join(" ");
+
+        let dquery = format!("{dis} {{ {fields} }}");
+
+        self.mutation(&dquery).await
+    }
+
+    pub async fn create_discussion(
+        &self,
+        body: &str,
+        category_id: &str,
+        repository_id: &str,
+        title: &str,
+        fields: Vec<&str>,
+    ) -> Result<Value> {
+        let dis = format!(
+            "createDiscussion(body: {body:?}, category_id: {category_id:?}, repository_id: {repository_id:?}, title: {title:?})"
+        );
+
+        let fields = fields.join(" ");
+
+        let dquery = format!("{dis} {{ {fields} }}");
+
+        self.mutation(&dquery).await
+    }
+
+    pub async fn close_discussion(&self, discussion_id: &str, fields: Vec<&str>) -> Result<Value> {
+        let dis = format!("closeDiscussion(discussion_id: {discussion_id:?})");
+
+        let fields = fields.join(" ");
+
+        let dquery = format!("{dis} {{ {fields} }}");
+
+        self.mutation(&dquery).await
+    }
+
+    pub async fn delete_discussion(&self, id: &str, fields: Vec<&str>) -> Result<Value> {
+        let dis = format!("deleteDiscussion(id: {id:?})");
+
+        let fields = fields.join(" ");
+
+        let dquery = format!("{dis} {{ {fields} }}");
+
+        self.mutation(&dquery).await
+    }
+
+    pub async fn delete_discussion_comment(&self, id: &str, fields: Vec<&str>) -> Result<Value> {
+        let dis = format!("deleteDiscussionComment(id: {id:?})");
+
+        let fields = fields.join(" ");
+
+        let dquery = format!("{dis} {{ {fields} }}");
+
+        self.mutation(&dquery).await
+    }
+
+    pub async fn update_discussion(
+        &self,
+        id: &str,
+        body: &str,
+        title: &str,
+        fields: Vec<&str>,
+    ) -> Result<Value> {
+        let dis = format!("updateDiscussion(body: {body:?}, title: {title:?}, id: {id:?})");
+
+        let fields = fields.join(" ");
+
+        let dquery = format!("{dis} {{ {fields} }}");
+
+        self.mutation(&dquery).await
+    }
+
+    pub async fn update_discussion_comment(
+        &self,
+        id: &str,
+        body: &str,
+        fields: Vec<&str>,
+    ) -> Result<Value> {
+        let dis = format!("updateDiscussionComment(id: {id:?}, body: {body:?})");
+
+        let fields = fields.join(" ");
+
+        let dquery = format!("{dis} {{ {fields} }}");
+
+        self.mutation(&dquery).await
     }
 }
