@@ -10,18 +10,18 @@ use serde::{de, Deserialize, Deserializer, Serialize};
 
 pub mod activity;
 pub mod apps;
+pub mod commits;
 pub mod events;
 pub mod gists;
 pub mod hooks;
 pub mod issues;
-pub mod commits;
 pub mod orgs;
 pub mod pulls;
 pub mod reactions;
 pub mod repos;
 pub mod teams;
+pub mod webhook_events;
 pub mod workflows;
-
 pub use apps::App;
 
 type BaseIdType = u64;
@@ -95,6 +95,7 @@ id_type!(
     AppId,
     ArtifactId,
     AssetId,
+    BranchProtectionRuleId,
     CardId,
     CheckRunId,
     CommentId,
@@ -102,6 +103,7 @@ id_type!(
     IssueEventId,
     IssueId,
     JobId,
+    HookId,
     LabelId,
     MilestoneId,
     NotificationId,
@@ -512,9 +514,9 @@ pub struct Repository {
     #[serde(skip_serializing_if = "Option::is_none")]
     pub visibility: Option<String>,
     #[serde(skip_serializing_if = "Option::is_none")]
-    pub pushed_at: Option<DateTime<Utc>>,
+    pub pushed_at: Option<u64>,
     #[serde(skip_serializing_if = "Option::is_none")]
-    pub created_at: Option<DateTime<Utc>>,
+    pub created_at: Option<u64>,
     #[serde(skip_serializing_if = "Option::is_none")]
     pub updated_at: Option<DateTime<Utc>>,
     #[serde(skip_serializing_if = "Option::is_none")]
@@ -545,21 +547,20 @@ pub struct Repository {
 
 #[derive(Debug, Clone, Hash, Eq, PartialEq, Serialize, Deserialize)]
 pub struct RepositoryFile {
-    pub name : Option<String>,
+    pub name: Option<String>,
     pub key: Option<String>,
-    pub url : Option<Url>,
-    pub html_url : Option<Url>,
+    pub url: Option<Url>,
+    pub html_url: Option<Url>,
 }
-
 
 #[derive(Debug, Clone, Eq, PartialEq, Serialize, Deserialize)]
 pub struct RepositoryMetrics {
-    pub health_percentage : u64,
+    pub health_percentage: u64,
     pub description: Option<String>,
-    pub documentation : Option<String>,
+    pub documentation: Option<String>,
     pub files: HashMap<String, Option<RepositoryFile>>,
     pub updated_at: Option<DateTime<Utc>>,
-    pub content_reports_enabled: Option<bool>
+    pub content_reports_enabled: Option<bool>,
 }
 
 #[derive(Debug, Clone, Hash, Eq, PartialEq, Serialize, Deserialize)]
@@ -771,29 +772,54 @@ pub struct PublicKey {
     pub key: String,
 }
 
-
 #[derive(Default, Debug, Clone, PartialEq, Serialize, Deserialize)]
 pub struct RateLimit {
     pub resources: Resources,
-    pub rate:      Rate,
+    pub rate: Rate,
 }
 
 #[derive(Default, Debug, Clone, PartialEq, Serialize, Deserialize)]
 pub struct Resources {
-    pub core:                        Rate,
-    pub search:                      Rate,
-    pub graphql:                     Option<Rate>,
-    pub integration_manifest:        Option<Rate>,
-    pub scim:                        Option<Rate>,
-    pub source_import:               Option<Rate>,
-    pub code_scanning_upload:        Option<Rate>,
+    pub core: Rate,
+    pub search: Rate,
+    pub graphql: Option<Rate>,
+    pub integration_manifest: Option<Rate>,
+    pub scim: Option<Rate>,
+    pub source_import: Option<Rate>,
+    pub code_scanning_upload: Option<Rate>,
     pub actions_runner_registration: Option<Rate>,
 }
 
 #[derive(Default, Debug, Clone, PartialEq, Serialize, Deserialize)]
 pub struct Rate {
-    pub limit:     usize,
-    pub used:      usize,
+    pub limit: usize,
+    pub used: usize,
     pub remaining: usize,
-    pub reset:     usize,
+    pub reset: usize,
+}
+
+#[derive(Debug, Clone, Hash, Eq, PartialEq, Serialize, Deserialize)]
+#[non_exhaustive]
+pub struct Author {
+    pub login: String,
+    pub id: UserId,
+    pub node_id: String,
+    pub avatar_url: Url,
+    pub gravatar_id: String,
+    pub url: Url,
+    pub html_url: Url,
+    pub followers_url: Url,
+    pub following_url: Url,
+    pub gists_url: Url,
+    pub starred_url: Url,
+    pub subscriptions_url: Url,
+    pub organizations_url: Url,
+    pub repos_url: Url,
+    pub events_url: Url,
+    pub received_events_url: Url,
+    pub r#type: String,
+    pub site_admin: bool,
+    pub patch_url: Option<String>,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub email: Option<String>,
 }

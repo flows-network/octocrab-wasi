@@ -413,3 +413,11 @@ mod test {
         );
     }
 }
+
+/// A Thread in a pull request review
+#[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
+#[non_exhaustive]
+pub struct Thread {
+    pub comments: Vec<Comment>,
+    pub node_id: String,
+}
